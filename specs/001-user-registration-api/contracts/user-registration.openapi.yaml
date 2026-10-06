@@ -1,0 +1,144 @@
+openapi: 3.0.3
+info:
+  title: User Registration API
+  version: 1.0.0
+  description: Create user profiles for frontend clients.
+paths:
+  /api/v1/users:
+    post:
+      operationId: registerUser
+      summary: Register a user
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+            example:
+              firstName: Ada
+              lastName: Lovelace
+      responses:
+        '201':
+          description: User profile created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+              example:
+                success: true
+                data:
+                  userId: '48291'
+                  firstName: Ada
+                  lastName: Lovelace
+                  emailId: ada.lovelace@abs.com
+                  active: true
+                error: null
+        '400':
+          description: Required name is missing/blank, exceeds 100 characters, or normalizes to an empty email segment. Empty normalized segments use error code INVALID_NAME_FOR_EMAIL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Unexpected service failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+components:
+  schemas:
+    UserRegistrationRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+      properties:
+        firstName:
+          type: string
+          pattern: '\S'
+          minLength: 1
+          maxLength: 100
+          description: Required, non-blank, and at most 100 characters.
+        lastName:
+          type: string
+          pattern: '\S'
+          minLength: 1
+          maxLength: 100
+          description: Required, non-blank, and at most 100 characters.
+    UserResponse:
+      type: object
+      required:
+        - userId
+        - firstName
+        - lastName
+        - emailId
+        - active
+      properties:
+        userId:
+          type: string
+          pattern: '^[0-9]{5}$'
+          description: Public five-digit employee identifier; never the internal database ID.
+        firstName:
+          type: string
+        lastName:
+          type: string
+        emailId:
+          type: string
+          format: email
+        active:
+          type: boolean
+          enum:
+            - true
+    ApiError:
+      type: object
+      required:
+        - timestamp
+        - status
+        - errorCode
+        - message
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          format: int32
+        errorCode:
+          type: string
+        message:
+          type: string
+    SuccessEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - error
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        data:
+          $ref: '#/components/schemas/UserResponse'
+        error:
+          nullable: true
+          type: object
+    ErrorEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - error
+      properties:
+        success:
+          type: boolean
+          enum:
+            - false
+        data:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/UserResponse'
+        error:
+          $ref: '#/components/schemas/ApiError'
